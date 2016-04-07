@@ -32,7 +32,7 @@ default()
 @task
 def dep_test():
     env.bluegreen_root = '/home/vagrant/deploy_test/'
-    env.bluegreen_ports = {'blue':'8888', 'green':'8889'}
+    env.bluegreen_ports = {'blue':'8888', 'green':'8000'}
     init_bluegreen()
 
 @task
@@ -43,6 +43,27 @@ def deploy(commit=None):
     env.repo_path = env.next_path + '/repo'
     git_seed(env.repo_path, commit)
     git_reset(env.repo_path, commit)
+    run('kill $(cat %(pidfile)s) || true' % env)
+
+
+    env.pidfile = env.pidfile.replace("\\", "/")
+    env.virtualenv_path = env.virtualenv_path.replace("\\", "/")
+    env.repo_path = env.repo_path.replace("\\", "/")
+    env.nginx_conf = env.nginx_conf.replace("\\", "/")
+
+    run('virtualenv %(virtualenv_path)s' % env)
+    run('source %(virtualenv_path)s/bin/activate && pip install -r %(repo_path)s/requirements.txt' % env)
+    with fabtools.python.virtualenv(env.virtualenv_path), cd(env.repo_path):
+        run('python manage.py migrate')
+        run('python manage.py collectstatic --noinput')
+
+
+    put(StringIO('proxy_pass http://127.0.0.1:%(bluegreen_port)s/;' % env), env.nginx_conf)
+
+    sudo('cd %(repo_path)s && PYTHONPATH=. BLUEGREEN=%(color)s %(virtualenv_path)s/bin/gunicorn -D -b 0.0.0.0:%(bluegreen_port)s -p %(pidfile)s blooby.wsgi:application' % env)
+
+
+
 
 
 @task

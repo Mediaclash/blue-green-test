@@ -24,6 +24,8 @@ Vagrant.configure('2') do |config|
 	# computers to access the VM, whereas host only networking does not.
 	config.vm.network "forwarded_port", guest: 8000, host: 9000
 
+	config.vm.network "forwarded_port", guest: 80, host: 9001
+
 	# forward a port for tomcat as well
 	config.vm.network "forwarded_port", guest: 8080, host: 9090
 
