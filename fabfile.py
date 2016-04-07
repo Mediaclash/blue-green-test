@@ -40,7 +40,7 @@ def deploy(commit=None):
     if not commit:
         commit = local('git rev-parse HEAD', capture=True)
 
-    env.repo_path = os.path.join(env.next_path, 'repo')
+    env.repo_path = env.next_path + '/repo'
     git_seed(env.repo_path, commit)
     git_reset(env.repo_path, commit)
 
